@@ -1,0 +1,22 @@
+{
+  "name": "Curtain Pricing Tier",
+  "type": "curtain_pricing_tier",
+  "storefront_access": "PUBLIC_READ",
+  "fields": [
+    { "key": "min_width", "type": "number_integer", "unit": "cm", "required": true },
+    { "key": "max_width", "type": "number_integer", "unit": "cm", "required": true },
+    { "key": "panels_required", "type": "number_integer", "required": true },
+    { "key": "base_price", "type": "number_decimal", "required": true },
+    { "key": "price_per_drop_tier", "type": "number_decimal", "required": true }
+  ],
+  "product_metafield": {
+    "namespace": "custom",
+    "key": "curtain_pricing_tiers",
+    "type": "list.metaobject_reference"
+  },
+  "sample_entries": [
+    { "min_width": 50, "max_width": 120, "panels_required": 1, "base_price": 80.0, "price_per_drop_tier": 10.0 },
+    { "min_width": 121, "max_width": 240, "panels_required": 2, "base_price": 140.0, "price_per_drop_tier": 18.0 },
+    { "min_width": 241, "max_width": 360, "panels_required": 3, "base_price": 210.0, "price_per_drop_tier": 28.0 }
+  ]
+}

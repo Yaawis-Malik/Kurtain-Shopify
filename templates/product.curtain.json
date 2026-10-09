@@ -1,0 +1,21 @@
+{
+  "sections": {
+    "curtain_configurator": {
+      "type": "curtain-configurator",
+      "blocks": {
+        "swatch_ivory": { "type": "swatch", "settings": { "name": "Ivory", "color": "#EAE3D2" } },
+        "swatch_sage": { "type": "swatch", "settings": { "name": "Sage", "color": "#A9B49A" } },
+        "swatch_slate": { "type": "swatch", "settings": { "name": "Slate", "color": "#5B6770" } }
+      },
+      "block_order": ["swatch_ivory", "swatch_sage", "swatch_slate"],
+      "settings": {
+        "drop_option_name": "Drop",
+        "color_option_name": "Color",
+        "add_label": "Add to cart",
+        "sold_out_label": "Sold out",
+        "show_panel_debug": false
+      }
+    }
+  },
+  "order": ["curtain_configurator"]
+}

@@ -1,0 +1,21 @@
+# Run in the Shopify GraphiQL app (Admin API), or any Admin GraphQL client.
+# Check mutation shapes against the Admin API version you are using.
+mutation CreateCurtainPricingTier {
+  metaobjectDefinitionCreate(
+    definition: {
+      name: "Curtain Pricing Tier"
+      type: "curtain_pricing_tier"
+      access: { storefront: PUBLIC_READ }
+      fieldDefinitions: [
+        { key: "min_width", name: "Min width (cm)", type: "number_integer", required: true }
+        { key: "max_width", name: "Max width (cm)", type: "number_integer", required: true }
+        { key: "panels_required", name: "Panels required", type: "number_integer", required: true }
+        { key: "base_price", name: "Base price", type: "number_decimal", required: true }
+        { key: "price_per_drop_tier", name: "Price per drop tier", type: "number_decimal", required: true }
+      ]
+    }
+  ) {
+    metaobjectDefinition { id type }
+    userErrors { field message code }
+  }
+}

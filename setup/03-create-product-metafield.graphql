@@ -1,0 +1,19 @@
+# Replace the definition id with the one returned by step 01.
+mutation CreateProductMetafield {
+  metafieldDefinitionCreate(
+    definition: {
+      name: "Curtain pricing tiers"
+      namespace: "custom"
+      key: "curtain_pricing_tiers"
+      ownerType: PRODUCT
+      type: "list.metaobject_reference"
+      access: { storefront: PUBLIC_READ }
+      validations: [
+        { name: "metaobject_definition_id", value: "gid://shopify/MetaobjectDefinition/REPLACE_ME" }
+      ]
+    }
+  ) {
+    createdDefinition { id key }
+    userErrors { field message code }
+  }
+}

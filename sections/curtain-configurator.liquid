@@ -1,0 +1,269 @@
+{{ 'curtain-configurator.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'curtain-configurator.js' | asset_url }}" defer></script>
+
+{%- liquid
+  assign tiers = product.metafields.custom.curtain_pricing_tiers.value
+  assign drop_name = section.settings.drop_option_name | downcase
+  assign color_name = section.settings.color_option_name | downcase
+  assign drop_pos = -1
+  assign color_pos = -1
+  assign drop_values = blank
+
+  for option in product.options_with_values
+    assign option_name = option.name | downcase
+    if option_name == drop_name
+      assign drop_pos = forloop.index0
+      assign drop_values = option.values
+    elsif option_name == color_name
+      assign color_pos = forloop.index0
+    endif
+  endfor
+
+  assign show_debug = false
+  if section.settings.show_panel_debug or request.design_mode
+    assign show_debug = true
+  endif
+-%}
+
+{%- assign images = product.media | where: 'media_type', 'image' -%}
+
+<div class="page-width">
+  <curtain-configurator class="cc" data-section-id="{{ section.id }}">
+    <div class="cc__layout">
+      <div class="cc__media">
+        {%- if images.size > 0 -%}
+          {%- assign first_image = images.first -%}
+          <div class="cc__stage">
+            <img
+              data-cc-stage
+              src="{{ first_image.preview_image | image_url: width: 1100 }}"
+              srcset="{{ first_image.preview_image | image_url: width: 550 }} 550w, {{ first_image.preview_image | image_url: width: 1100 }} 1100w"
+              sizes="(min-width: 990px) 50vw, 100vw"
+              width="1100"
+              height="1100"
+              alt="{{ first_image.alt | escape | default: product.title | escape }}"
+              fetchpriority="high"
+            >
+          </div>
+          {%- if images.size > 1 -%}
+            <ul class="cc__thumbs">
+              {%- for media in images -%}
+                <li>
+                  <button
+                    type="button"
+                    class="cc__thumb"
+                    data-cc-thumb
+                    data-src="{{ media.preview_image | image_url: width: 1100 }}"
+                    {% if forloop.first %}aria-current="true"{% endif %}
+                    aria-label="Show image {{ forloop.index }}"
+                  >
+                    <img src="{{ media.preview_image | image_url: width: 160 }}" width="160" height="160" alt="" loading="lazy">
+                  </button>
+                </li>
+              {%- endfor -%}
+            </ul>
+          {%- endif -%}
+        {%- endif -%}
+      </div>
+
+      <div class="cc__info">
+        <h1 class="cc__title">{{ product.title | escape }}</h1>
+    {%- if tiers == blank or drop_pos < 0 -%}
+      {%- if request.design_mode -%}
+        <p class="cc__notice">
+          Curtain configurator needs (1) a product option named "{{ section.settings.drop_option_name }}"
+          and (2) the Curtain pricing tiers metafield (custom.curtain_pricing_tiers) filled in on this product.
+        </p>
+      {%- endif -%}
+    {%- else -%}
+      <script type="application/json" data-cc-config>
+        {
+          "currency": {{ cart.currency.iso_code | json }},
+          "locale": {{ request.locale.iso_code | json }},
+          "cartAddUrl": {{ routes.cart_add_url | append: '.js' | json }},
+          "cartUrl": {{ routes.cart_url | json }},
+          "dropIndex": {{ drop_pos }},
+          "colorIndex": {{ color_pos }},
+          "dropValues": {{ drop_values | json }},
+          "addLabel": {{ section.settings.add_label | json }},
+          "soldOutLabel": {{ section.settings.sold_out_label | json }},
+          "tiers": [
+            {%- for tier in tiers -%}
+              {
+                "id": {{ tier.system.id | json }},
+                "min": {{ tier.min_width.value | json }},
+                "max": {{ tier.max_width.value | json }},
+                "panels": {{ tier.panels_required.value | default: 0 | json }},
+                "baseCents": {{ tier.base_price.value | default: 0 | times: 100 | round | json }},
+                "perDropCents": {{ tier.price_per_drop_tier.value | default: 0 | times: 100 | round | json }}
+              }{% unless forloop.last %},{% endunless %}
+            {%- endfor -%}
+          ],
+          "variants": [
+            {%- for variant in product.variants -%}
+              {
+                "id": {{ variant.id }},
+                "available": {{ variant.available | json }},
+                "options": {{ variant.options | json }}
+              }{% unless forloop.last %},{% endunless %}
+            {%- endfor -%}
+          ]
+        }
+      </script>
+
+      <form class="cc__form" method="post" action="{{ routes.cart_add_url }}" novalidate data-cc-form>
+        <div class="cc__summary" aria-live="polite">
+          <p class="cc__price" data-cc-price></p>
+        </div>
+
+        <div class="cc__row">
+          <div class="cc__field" data-cc-width-field>
+            <label for="cc-width-{{ section.id }}">Width</label>
+            <div class="cc__input-wrap">
+              <input
+                id="cc-width-{{ section.id }}"
+                type="number"
+                inputmode="numeric"
+                step="1"
+                autocomplete="off"
+                data-cc-width
+                aria-describedby="cc-status-{{ section.id }}"
+              >
+              <span class="cc__unit" aria-hidden="true">cm</span>
+            </div>
+          </div>
+
+          <div class="cc__field">
+            <label for="cc-drop-{{ section.id }}">Drop</label>
+            <div class="cc__input-wrap">
+              <select id="cc-drop-{{ section.id }}" data-cc-drop>
+                {%- for value in drop_values -%}
+                  <option value="{{ value | escape }}"{% if forloop.first %} selected{% endif %}>{{ value | escape }}</option>
+                {%- endfor -%}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {%- if color_pos >= 0 and section.blocks.size > 0 -%}
+          <fieldset class="cc__fabric">
+            <legend>Fabric: <span data-cc-color-name></span></legend>
+            <div class="cc__swatches">
+              {%- for block in section.blocks -%}
+                {%- if block.type == 'swatch' -%}
+                  <div class="cc__swatch" {{ block.shopify_attributes }}>
+                    <input
+                      type="radio"
+                      name="cc-color-{{ section.id }}"
+                      id="cc-swatch-{{ block.id }}"
+                      value="{{ block.settings.name | escape }}"
+                      data-cc-swatch
+                      {% if forloop.first %}checked{% endif %}
+                    >
+                    <label
+                      for="cc-swatch-{{ block.id }}"
+                      title="{{ block.settings.name | escape }}"
+                      style="--cc-swatch: {{ block.settings.color }};{% if block.settings.image != blank %} background-image: url('{{ block.settings.image | image_url: width: 96 }}');{% endif %}"
+                    >
+                      <span class="visually-hidden">{{ block.settings.name | escape }}</span>
+                    </label>
+                  </div>
+                {%- endif -%}
+              {%- endfor -%}
+            </div>
+          </fieldset>
+        {%- endif -%}
+
+        <div class="cc__field cc__field--qty">
+          <label for="cc-qty-{{ section.id }}">Quantity</label>
+          <div class="cc__input-wrap">
+            <input id="cc-qty-{{ section.id }}" type="number" min="1" step="1" value="1" inputmode="numeric" data-cc-qty>
+          </div>
+        </div>
+
+        <p class="cc__status" id="cc-status-{{ section.id }}" role="status" data-cc-status></p>
+
+        {%- if show_debug -%}
+          <p class="cc__debug" data-cc-debug>Fabric panels: -</p>
+        {%- endif -%}
+
+        <button type="submit" class="cc__submit" data-cc-submit disabled>
+          <span data-cc-submit-label>{{ section.settings.add_label }}</span>
+        </button>
+      </form>
+    {%- endif -%}
+
+        {%- if product.description != blank -%}
+          <details class="cc__details">
+            <summary>Product details</summary>
+            <div class="cc__description rte">{{ product.description }}</div>
+          </details>
+        {%- endif -%}
+      </div>
+    </div>
+  </curtain-configurator>
+</div>
+
+{% schema %}
+{
+  "name": "Curtain configurator",
+  "tag": "section",
+  "enabled_on": { "templates": ["product"] },
+  "max_blocks": 24,
+  "settings": [
+    { "type": "header", "content": "Product options" },
+    {
+      "type": "text",
+      "id": "drop_option_name",
+      "label": "Drop option name",
+      "default": "Drop",
+      "info": "Must match the product option name. Values such as 150cm, 200cm, 250cm."
+    },
+    {
+      "type": "text",
+      "id": "color_option_name",
+      "label": "Fabric option name",
+      "default": "Color",
+      "info": "Must match the product option name that holds the fabric colors."
+    },
+    { "type": "header", "content": "Button" },
+    { "type": "text", "id": "add_label", "label": "Add to cart label", "default": "Add to cart" },
+    { "type": "text", "id": "sold_out_label", "label": "Sold out label", "default": "Sold out" },
+    { "type": "header", "content": "Review" },
+    {
+      "type": "checkbox",
+      "id": "show_panel_debug",
+      "label": "Show fabric panel count",
+      "default": false,
+      "info": "Panels are hidden from shoppers by default. Always visible in the theme editor."
+    }
+  ],
+  "blocks": [
+    {
+      "type": "swatch",
+      "name": "Fabric swatch",
+      "settings": [
+        {
+          "type": "text",
+          "id": "name",
+          "label": "Fabric name",
+          "default": "Ivory",
+          "info": "Must match a value of the fabric product option exactly."
+        },
+        { "type": "color", "id": "color", "label": "Color", "default": "#EAE3D2" },
+        { "type": "image_picker", "id": "image", "label": "Fabric image (optional)" }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Curtain configurator",
+      "blocks": [
+        { "type": "swatch", "settings": { "name": "Ivory", "color": "#EAE3D2" } },
+        { "type": "swatch", "settings": { "name": "Sage", "color": "#A9B49A" } },
+        { "type": "swatch", "settings": { "name": "Slate", "color": "#5B6770" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

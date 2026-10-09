@@ -1,0 +1,34 @@
+mutation CreateCurtainPricingEntries {
+  small: metaobjectUpsert(
+    handle: { type: "curtain_pricing_tier", handle: "width-50-120" }
+    metaobject: { fields: [
+      { key: "min_width", value: "50" }
+      { key: "max_width", value: "120" }
+      { key: "panels_required", value: "1" }
+      { key: "base_price", value: "80.00" }
+      { key: "price_per_drop_tier", value: "10.00" }
+    ] }
+  ) { metaobject { id handle } userErrors { field message code } }
+
+  medium: metaobjectUpsert(
+    handle: { type: "curtain_pricing_tier", handle: "width-121-240" }
+    metaobject: { fields: [
+      { key: "min_width", value: "121" }
+      { key: "max_width", value: "240" }
+      { key: "panels_required", value: "2" }
+      { key: "base_price", value: "140.00" }
+      { key: "price_per_drop_tier", value: "18.00" }
+    ] }
+  ) { metaobject { id handle } userErrors { field message code } }
+
+  large: metaobjectUpsert(
+    handle: { type: "curtain_pricing_tier", handle: "width-241-360" }
+    metaobject: { fields: [
+      { key: "min_width", value: "241" }
+      { key: "max_width", value: "360" }
+      { key: "panels_required", value: "3" }
+      { key: "base_price", value: "210.00" }
+      { key: "price_per_drop_tier", value: "28.00" }
+    ] }
+  ) { metaobject { id handle } userErrors { field message code } }
+}
